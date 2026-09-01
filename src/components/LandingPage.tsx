@@ -7,9 +7,12 @@ import {
   ArrowRight, 
   Scale, 
   CheckCircle2, 
-  FileCheck2, 
+  FileCheck2,
   Sparkles,
-  Lock
+  Lock,
+  MessageSquareQuote,
+  Star,
+  Plus
 } from 'lucide-react';
 import { useSharedStore, UserRole } from '../store/sharedStore';
 import { TRANSLATIONS } from '../store/translations';
@@ -17,10 +20,16 @@ import { AuthModal } from './AuthModal';
 
 interface LandingPageProps {
   onOpenSampleSuite: () => void;
+  onOpenFeedbackWall?: () => void;
+  onOpenFeedbackForm?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onOpenSampleSuite }) => {
-  const { setCurrentRole, currentUser, language } = useSharedStore();
+export const LandingPage: React.FC<LandingPageProps> = ({ 
+  onOpenSampleSuite,
+  onOpenFeedbackWall,
+  onOpenFeedbackForm
+}) => {
+  const { setCurrentRole, currentUser, language, feedbacks } = useSharedStore();
   const t = TRANSLATIONS[language];
   const [authModalRole, setAuthModalRole] = useState<'consumer' | 'enforcement' | 'manufacturer' | 'officer' | null>(null);
 
@@ -250,6 +259,83 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenSampleSuite }) =
         <p className="text-[11px] text-charcoal-500 italic mt-4">
           {t.disclaimerFontPDP}
         </p>
+      </div>
+
+      {/* Public Feedback & Community Suggestions Section */}
+      <div className="bg-white rounded-3xl border border-charcoal-200 p-6 sm:p-8 space-y-6 shadow-soft-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-charcoal-100 pb-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="p-2 rounded-xl bg-amber-100 text-amber-800">
+                <MessageSquareQuote className="w-5 h-5" />
+              </span>
+              <div>
+                <h3 className="text-base font-extrabold text-charcoal-900">
+                  {language === 'hi' ? 'सार्वजनिक प्रतिक्रिया एवं सुझाव' : 'Public Feedback & Suggestions'}
+                </h3>
+                <p className="text-xs text-charcoal-500 mt-0.5">
+                  {language === 'hi'
+                    ? '100% गुमनाम विचार, सुझाव एवं अनुभव'
+                    : '100% anonymous community feedback, ideas & ratings for LabelLex.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 self-start sm:self-auto">
+            <button
+              onClick={onOpenFeedbackWall}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-charcoal-800 border border-charcoal-200 transition-colors cursor-pointer"
+            >
+              {language === 'hi' ? 'सभी देखें' : 'View All'} ({feedbacks.length})
+            </button>
+            <button
+              onClick={onOpenFeedbackForm}
+              className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-charcoal-900 hover:bg-charcoal-800 text-white shadow-soft-sm transition-all hover:scale-102 active:scale-98 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-pastel-mint" />
+              <span>{language === 'hi' ? 'प्रतिक्रिया दें' : 'Give Feedback'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Recent Feedback Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {feedbacks.slice(0, 3).map((item) => (
+            <div
+              key={item.id}
+              className="p-4 rounded-2xl bg-cream-50/70 border border-charcoal-200/80 space-y-2.5 flex flex-col justify-between hover:border-charcoal-300 transition-all"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3 h-3 ${
+                          s <= (item.rating || 5)
+                            ? 'text-amber-400 fill-amber-400'
+                            : 'text-charcoal-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-white border border-charcoal-200 text-charcoal-600">
+                    {item.category || 'General'}
+                  </span>
+                </div>
+                <p className="text-xs text-charcoal-800 font-medium leading-relaxed italic">
+                  "{item.comment}"
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-charcoal-100 flex items-center justify-between text-[10px] text-charcoal-400">
+                <span>👤 Anonymous</span>
+                <span>{new Date(item.timestamp).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Auth Modal Triggered from Role Card */}

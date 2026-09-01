@@ -17,11 +17,44 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface AnonymousFeedback {
+  id: string;
+  comment: string;
+  rating?: number; // 1 to 5
+  category?: 'suggestion' | 'feature' | 'accuracy' | 'general';
+  timestamp: number;
+}
+
 const STORAGE_KEY_REPORTS = 'labellex_reports_v2';
 const STORAGE_KEY_ROLE = 'labellex_current_role_v2';
 const STORAGE_KEY_LANG = 'labellex_lang_v2';
 const STORAGE_KEY_USER = 'labellex_current_user_v2';
 const STORAGE_KEY_USERS_DB = 'labellex_registered_users_v2';
+const STORAGE_KEY_FEEDBACK = 'labellex_anonymous_feedback_v1';
+
+export const INITIAL_ANONYMOUS_FEEDBACK: AnonymousFeedback[] = [
+  {
+    id: 'FB-9021',
+    comment: 'The multi-angle scan orientation worked on my curved coffee jar label where other apps failed. Great accuracy!',
+    rating: 5,
+    category: 'accuracy',
+    timestamp: Date.now() - 3600000 * 24 * 2
+  },
+  {
+    id: 'FB-8842',
+    comment: 'Super fast pre-market certificate generator for our packaging QA team. Saved us hours of manual cross-checking.',
+    rating: 5,
+    category: 'feature',
+    timestamp: Date.now() - 3600000 * 24 * 1
+  },
+  {
+    id: 'FB-7619',
+    comment: 'Clear violation breakdown with legal references. Helpful for consumers to verify MRP and statutory tax disclosure.',
+    rating: 4,
+    category: 'general',
+    timestamp: Date.now() - 3600000 * 6
+  }
+];
 
 // Pre-seeded demo user directory for instant test login
 export const DEFAULT_PRESET_USERS: Record<'consumer' | 'enforcement' | 'manufacturer' | 'officer', UserProfile> = {
@@ -64,6 +97,7 @@ export const DEFAULT_PRESET_USERS: Record<'consumer' | 'enforcement' | 'manufact
 
 class CentralStore {
   private reports: ComplianceReportData[] = [];
+  private feedbacks: AnonymousFeedback[] = [];
   private currentRole: UserRole = 'landing';
   private language: Language = 'en';
   private currentUser: UserProfile | null = null;
@@ -101,6 +135,14 @@ class CentralStore {
         localStorage.setItem(STORAGE_KEY_USERS_DB, JSON.stringify(this.registeredUsers));
       }
 
+      const savedFeedback = localStorage.getItem(STORAGE_KEY_FEEDBACK);
+      if (savedFeedback) {
+        this.feedbacks = JSON.parse(savedFeedback);
+      } else {
+        this.feedbacks = [...INITIAL_ANONYMOUS_FEEDBACK];
+        this.saveFeedbacks();
+      }
+
       const savedUser = localStorage.getItem(STORAGE_KEY_USER);
       if (savedUser) {
         this.currentUser = JSON.parse(savedUser);
@@ -110,6 +152,7 @@ class CentralStore {
     } catch (e) {
       console.warn('Error reading from localStorage:', e);
       this.reports = [...INITIAL_ENFORCEMENT_RECORDS];
+      this.feedbacks = [...INITIAL_ANONYMOUS_FEEDBACK];
     }
   }
 
@@ -122,6 +165,15 @@ class CentralStore {
     }
   }
 
+  private saveFeedbacks() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(STORAGE_KEY_FEEDBACK, JSON.stringify(this.feedbacks));
+    } catch (e) {
+      console.warn('Error saving feedbacks to localStorage:', e);
+    }
+  }
+
   public subscribe(listener: () => void) {
     this.listeners.add(listener);
     return () => {
@@ -131,6 +183,7 @@ class CentralStore {
 
   private notify() {
     this.saveReports();
+    this.saveFeedbacks();
     for (const listener of this.listeners) {
       listener();
     }
@@ -318,6 +371,24 @@ class CentralStore {
     this.notify();
   }
 
+  public getFeedbacks(): AnonymousFeedback[] {
+    return this.feedbacks;
+  }
+
+  public submitFeedback(feedbackItem: { comment: string; rating?: number; category?: string }): AnonymousFeedback {
+    const newFeedback: AnonymousFeedback = {
+      id: `FB-${Math.floor(1000 + Math.random() * 9000)}`,
+      comment: feedbackItem.comment.trim(),
+      rating: feedbackItem.rating,
+      category: (feedbackItem.category as any) || 'general',
+      timestamp: Date.now()
+    };
+    this.feedbacks = [newFeedback, ...this.feedbacks];
+    this.saveFeedbacks();
+    this.notify();
+    return newFeedback;
+  }
+
   public getLanguage(): Language {
     return this.language;
   }
@@ -346,6 +417,7 @@ export function useSharedStore() {
 
   return {
     reports: sharedStore.getReports(),
+    feedbacks: sharedStore.getFeedbacks(),
     currentRole: sharedStore.getCurrentRole(),
     currentUser: sharedStore.getCurrentUser(),
     language: sharedStore.getLanguage(),
@@ -361,6 +433,7 @@ export function useSharedStore() {
     reportViolation: (id: string, notes?: string) => sharedStore.reportViolationToEnforcement(id, notes),
     saveOfficerInspection: (report: ComplianceReportData, details: any) => sharedStore.saveOfficerInspection(report, details),
     saveManufacturerCertificate: (report: ComplianceReportData, batch: string) => sharedStore.saveManufacturerCertificate(report, batch),
+    submitFeedback: (feedback: { comment: string; rating?: number; category?: string }) => sharedStore.submitFeedback(feedback),
     resetToSampleData: () => sharedStore.resetToSampleData(),
     deleteReport: (id: string) => sharedStore.deleteReport(id)
   };

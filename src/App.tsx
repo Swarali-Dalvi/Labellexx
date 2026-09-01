@@ -6,6 +6,8 @@ import { EnforcementDashboard } from './dashboards/EnforcementDashboard';
 import { ManufacturerDashboard } from './dashboards/ManufacturerDashboard';
 import { OfficerDashboard } from './dashboards/OfficerDashboard';
 import { SampleSelectorModal } from './components/SampleSelectorModal';
+import { FeedbackModal } from './components/FeedbackModal';
+import { FeedbackWallModal } from './components/FeedbackWallModal';
 import { ComplianceReport } from './components/ComplianceReport';
 import { ComplianceReportData } from './engine/rules';
 import { useSharedStore } from './store/sharedStore';
@@ -14,6 +16,8 @@ import { ArrowLeft, Scale, ShieldCheck } from 'lucide-react';
 export function App() {
   const { currentRole, setCurrentRole } = useSharedStore();
   const [isSampleSuiteOpen, setIsSampleSuiteOpen] = useState(false);
+  const [isFeedbackWallOpen, setIsFeedbackWallOpen] = useState(false);
+  const [isGiveFeedbackOpen, setIsGiveFeedbackOpen] = useState(false);
   const [activeSampleReport, setActiveSampleReport] = useState<ComplianceReportData | null>(null);
 
   const handleSelectSampleReport = (report: ComplianceReportData) => {
@@ -24,7 +28,11 @@ export function App() {
     <div className="min-h-screen bg-cream-50 flex flex-col selection:bg-mint-200">
       
       {/* Universal Sticky Top Navigation */}
-      <Navbar onOpenSampleSuite={() => setIsSampleSuiteOpen(true)} />
+      <Navbar 
+        onOpenSampleSuite={() => setIsSampleSuiteOpen(true)}
+        onOpenFeedbackWall={() => setIsFeedbackWallOpen(true)}
+        onOpenFeedbackForm={() => setIsGiveFeedbackOpen(true)}
+      />
 
       {/* Main Content View */}
       <main className="flex-1">
@@ -42,7 +50,11 @@ export function App() {
         ) : (
           <>
             {currentRole === 'landing' && (
-              <LandingPage onOpenSampleSuite={() => setIsSampleSuiteOpen(true)} />
+              <LandingPage 
+                onOpenSampleSuite={() => setIsSampleSuiteOpen(true)} 
+                onOpenFeedbackWall={() => setIsFeedbackWallOpen(true)}
+                onOpenFeedbackForm={() => setIsGiveFeedbackOpen(true)}
+              />
             )}
             {currentRole === 'consumer' && (
               <ConsumerDashboard onOpenSampleSuite={() => setIsSampleSuiteOpen(true)} />
@@ -80,6 +92,20 @@ export function App() {
         isOpen={isSampleSuiteOpen}
         onClose={() => setIsSampleSuiteOpen(false)}
         onSelectReport={handleSelectSampleReport}
+      />
+
+      {/* Anonymous Feedback Form Modal */}
+      <FeedbackModal
+        isOpen={isGiveFeedbackOpen}
+        onClose={() => setIsGiveFeedbackOpen(false)}
+        onSubmitted={() => setIsFeedbackWallOpen(true)}
+      />
+
+      {/* Public Feedback & Suggestions Wall Modal */}
+      <FeedbackWallModal
+        isOpen={isFeedbackWallOpen}
+        onClose={() => setIsFeedbackWallOpen(false)}
+        onOpenFeedbackForm={() => setIsGiveFeedbackOpen(true)}
       />
 
     </div>

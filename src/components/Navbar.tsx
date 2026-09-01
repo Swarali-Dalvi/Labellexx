@@ -12,7 +12,8 @@ import {
   X,
   LogOut,
   LogIn,
-  User
+  User,
+  MessageSquarePlus
 } from 'lucide-react';
 import { useSharedStore, UserRole } from '../store/sharedStore';
 import { TRANSLATIONS } from '../store/translations';
@@ -20,9 +21,15 @@ import { AuthModal } from './AuthModal';
 
 interface NavbarProps {
   onOpenSampleSuite: () => void;
+  onOpenFeedbackWall?: () => void;
+  onOpenFeedbackForm?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenSampleSuite }) => {
+export const Navbar: React.FC<NavbarProps> = ({ 
+  onOpenSampleSuite,
+  onOpenFeedbackWall,
+  onOpenFeedbackForm
+}) => {
   const { currentRole, setCurrentRole, currentUser, logout, language, setLanguage, resetToSampleData } = useSharedStore();
   const t = TRANSLATIONS[language];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -112,6 +119,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSampleSuite }) => {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-1.5 sm:space-x-2">
             
+            {/* Feedback & Suggestions Button */}
+            <button
+              onClick={onOpenFeedbackWall}
+              className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 sm:py-1.5 min-h-[38px] sm:min-h-[36px] rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 shadow-soft-sm transition-all hover:scale-102 active:scale-98 cursor-pointer"
+              title="View or give anonymous feedback"
+            >
+              <MessageSquarePlus className="w-3.5 h-3.5 text-amber-600" />
+              <span className="hidden md:inline">{language === 'hi' ? 'सुझाव / फीडबैक' : 'Feedback'}</span>
+              <span className="md:hidden text-[11px]">{language === 'hi' ? 'सुझाव' : 'Feedback'}</span>
+            </button>
+
             {/* Quick Test Suite Button */}
             <button
               onClick={onOpenSampleSuite}
