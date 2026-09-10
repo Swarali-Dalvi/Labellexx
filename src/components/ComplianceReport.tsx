@@ -33,6 +33,7 @@ import { ComplianceReportData, SupportingEvidence } from '../engine/rules';
 import { useSharedStore } from '../store/sharedStore';
 import { TRANSLATIONS } from '../store/translations';
 import { optimizeImage } from '../engine/imageOptimizer';
+import { InteractiveSpatialInspector } from './InteractiveSpatialInspector';
 
 interface ComplianceReportProps {
   report: ComplianceReportData;
@@ -336,32 +337,7 @@ export const ComplianceReport: React.FC<ComplianceReportProps> = ({
 
       {/* Uploaded Package Images Thumbnails */}
       {report.images && report.images.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Layers className="w-4 h-4 text-charcoal-600" />
-            <span className="text-xs font-bold uppercase tracking-wider text-charcoal-700">
-              {t.scannedPanels} ({report.images.length})
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-4">
-            {report.images.map((img, idx) => (
-              <div key={idx} className="relative rounded-2xl overflow-hidden border border-charcoal-200 bg-charcoal-900 shadow-soft-sm group">
-                <img 
-                  src={img.dataUrl} 
-                  alt={`${img.panel} panel preview`} 
-                  className="w-44 h-32 object-contain" 
-                />
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[11px] font-bold bg-white/90 text-charcoal-900 shadow-soft-sm">
-                  {img.panel === 'Front' ? t.frontPanel : img.panel === 'Back' ? t.backPanel : img.panel === 'Side' ? t.sidePanel : img.panel}
-                </div>
-                <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-mono bg-charcoal-900/80 text-white">
-                  {img.ocrCharCount} {t.charsExtracted}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <InteractiveSpatialInspector report={report} />
       )}
 
       {/* RULE 7 FONT SIZE & READABILITY ASSESSMENT CARD (SIH Requirement 3) */}

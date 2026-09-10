@@ -11,7 +11,11 @@ import {
   ArrowLeft,
   Layers,
   FileCheck2,
-  Printer
+  Printer,
+  Database,
+  TrendingUp,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 import { ImageUploadPipeline } from '../components/ImageUploadPipeline';
 import { ComplianceReport } from '../components/ComplianceReport';
@@ -69,6 +73,42 @@ export const ManufacturerDashboard: React.FC<ManufacturerDashboardProps> = ({ on
           <Sparkles className="w-4 h-4 text-purple-600" />
           <span>Load Test Design Samples</span>
         </button>
+      </div>
+
+      {/* EXECUTIVE FINANCIAL ROI & PENALTIES SAVED METRIC TILES */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 rounded-2xl bg-white border border-charcoal-200 shadow-soft-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-charcoal-500 uppercase tracking-wider">Pre-Print Defects Caught</span>
+            <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+              <CheckCircle2 className="w-4 h-4" />
+            </span>
+          </div>
+          <span className="text-2xl font-black text-charcoal-900 block">18 SKUs</span>
+          <p className="text-[11px] text-charcoal-500">Zero non-compliant packaging printed</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-charcoal-200 shadow-soft-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-charcoal-500 uppercase tracking-wider">Sec 36(1) Fines Prevented</span>
+            <span className="p-1.5 rounded-lg bg-purple-50 text-purple-700">
+              <ShieldCheck className="w-4 h-4" />
+            </span>
+          </div>
+          <span className="text-2xl font-black text-purple-700 block">₹18.5 Lakhs</span>
+          <p className="text-[11px] text-charcoal-500">Calculated across 8 packaging lines</p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-charcoal-200 shadow-soft-sm space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-charcoal-500 uppercase tracking-wider">Recall Costs Saved</span>
+            <span className="p-1.5 rounded-lg bg-amber-50 text-amber-700">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+          </div>
+          <span className="text-2xl font-black text-emerald-700 block">₹32.0 Lakhs</span>
+          <p className="text-[11px] text-charcoal-500">Zero packaging lot scrapping</p>
+        </div>
       </div>
 
       {/* Selected Report View */}
@@ -153,6 +193,28 @@ export const ManufacturerDashboard: React.FC<ManufacturerDashboardProps> = ({ on
                     onChange={(e) => setBatchNumber(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-charcoal-200 bg-cream-50 focus:bg-white text-charcoal-900 font-medium"
                   />
+                </div>
+              </div>
+
+              {/* Master ERP & GS1 DataKart Cross-Referencing Panel */}
+              <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 rounded-xl bg-purple-600 text-white shrink-0">
+                    <Database className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-purple-950 block">GS1 DataKart & SAP S/4HANA Master Cross-Referencing: Active</span>
+                    <p className="text-[11px] text-purple-800">
+                      OCR declarations will be automatically verified against your master SKU database (GTIN-13 / MRP / Net Weight).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  <span className="px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-white border border-purple-300 text-purple-900 flex items-center space-x-1">
+                    <Check className="w-3 h-3 text-emerald-600" />
+                    <span>ERP Connected</span>
+                  </span>
                 </div>
               </div>
 

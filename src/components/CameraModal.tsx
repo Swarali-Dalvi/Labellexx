@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, RefreshCw, SwitchCamera, AlertCircle, Sparkles, Check } from 'lucide-react';
+import { Camera, X, RefreshCw, SwitchCamera, AlertCircle, Sparkles, Check, Zap, ZapOff, ZoomIn, Grid3X3 } from 'lucide-react';
 import { useSharedStore } from '../store/sharedStore';
 
 interface CameraModalProps {
@@ -21,6 +21,10 @@ export const CameraModal: React.FC<CameraModalProps> = ({
 
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [hasTorch, setHasTorch] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const [showPdpGrid, setShowPdpGrid] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
@@ -84,6 +88,13 @@ export const CameraModal: React.FC<CameraModalProps> = ({
 
       streamRef.current = stream;
 
+      // Check if camera track supports torch
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        const capabilities = (track.getCapabilities ? track.getCapabilities() : {}) as any;
+        setHasTorch(!!capabilities.torch);
+      }
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
@@ -109,6 +120,36 @@ export const CameraModal: React.FC<CameraModalProps> = ({
             ? (language === 'hi' ? 'कैमरा एक्सेस की अनुमति अस्वीकार कर दी गई। कृपया ब्राउज़र सेटिंग्स में कैमरा की अनुमति दें।' : 'Camera permission was denied. Please allow camera access in your browser settings.')
             : (language === 'hi' ? 'कैमरा शुरू करने में त्रुटि हुई। कृपया जांचें कि कोई अन्य ऐप इसका उपयोग नहीं कर रहा है।' : 'Unable to start camera. Please verify your camera is connected and not in use by another app.')
         );
+      }
+    }
+  };
+
+  const handleToggleTorch = async () => {
+    if (!streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (track && (track.getCapabilities as any)?.().torch) {
+      try {
+        const newTorchState = !isTorchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: newTorchState } as any]
+        });
+        setIsTorchOn(newTorchState);
+      } catch (e) {
+        console.warn('Failed to toggle torch:', e);
+      }
+    }
+  };
+
+  const handleSetZoom = (level: number) => {
+    setZoomLevel(level);
+    if (!streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (track) {
+      const capabilities = (track.getCapabilities ? track.getCapabilities() : {}) as any;
+      if (capabilities.zoom) {
+        track.applyConstraints({
+          advanced: [{ zoom: level } as any]
+        }).catch(() => {});
       }
     }
   };
@@ -195,14 +236,81 @@ export const CameraModal: React.FC<CameraModalProps> = ({
                 playsInline
                 autoPlay
                 muted
-                className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                style={{ transform: `scale(${zoomLevel}) ${facingMode === 'user' ? 'scaleX(-1)' : ''}` }}
+                className="w-full h-full object-cover transition-transform duration-200 origin-center"
               />
+
+              {/* Top Viewfinder Hardware Controls Bar */}
+              {!isLoading && !errorMsg && (
+                <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-auto">
+                  
+                  {/* Torch Toggle */}
+                  {hasTorch && (
+                    <button
+                      onClick={handleToggleTorch}
+                      className={`p-2 rounded-xl backdrop-blur-md border transition-all cursor-pointer ${
+                        isTorchOn 
+                          ? 'bg-amber-400 text-charcoal-950 border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.8)]' 
+                          : 'bg-charcoal-900/60 text-white border-white/20 hover:bg-charcoal-900/80'
+                      }`}
+                      title="Toggle Torch / Flashlight"
+                    >
+                      {isTorchOn ? <Zap className="w-4 h-4 fill-charcoal-950" /> : <ZapOff className="w-4 h-4" />}
+                    </button>
+                  )}
+
+                  {/* Zoom Presets */}
+                  <div className="flex items-center space-x-1 bg-charcoal-900/60 backdrop-blur-md px-2 py-1 rounded-xl border border-white/20 mx-auto">
+                    {[1.0, 1.5, 2.0, 3.0].map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => handleSetZoom(lvl)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                          zoomLevel === lvl
+                            ? 'bg-pastel-mint text-charcoal-950 shadow-sm'
+                            : 'text-white/80 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {lvl}x
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* PDP Grid Overlay Toggle */}
+                  <button
+                    onClick={() => setShowPdpGrid(!showPdpGrid)}
+                    className={`p-2 rounded-xl backdrop-blur-md border transition-all cursor-pointer ${
+                      showPdpGrid
+                        ? 'bg-pastel-mint text-charcoal-950 border-pastel-mint'
+                        : 'bg-charcoal-900/60 text-white border-white/20 hover:bg-charcoal-900/80'
+                    }`}
+                    title="Toggle Rule 2(h) PDP Grid Overlay"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               {/* Viewfinder Framing Overlay */}
               {!isLoading && !errorMsg && (
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-6">
                   <div className="w-[85%] h-[75%] border-2 border-dashed border-pastel-mint/80 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]">
                     
+                    {/* Rule 2(h) PDP Crosshair Alignment Grid */}
+                    {showPdpGrid && (
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-40">
+                        <div className="border-r border-b border-pastel-mint/50" />
+                        <div className="border-r border-b border-pastel-mint/50" />
+                        <div className="border-b border-pastel-mint/50" />
+                        <div className="border-r border-b border-pastel-mint/50" />
+                        <div className="border-r border-b border-pastel-mint/50" />
+                        <div className="border-b border-pastel-mint/50" />
+                        <div className="border-r border-pastel-mint/50" />
+                        <div className="border-r border-pastel-mint/50" />
+                        <div />
+                      </div>
+                    )}
+
                     {/* Corner Accent Marks */}
                     <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-pastel-mint rounded-tl-lg" />
                     <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-pastel-mint rounded-tr-lg" />
@@ -212,7 +320,7 @@ export const CameraModal: React.FC<CameraModalProps> = ({
                     {/* Instruction Tag */}
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-charcoal-900/80 backdrop-blur-sm text-pastel-mint px-3 py-1 rounded-full text-[11px] font-bold tracking-wide flex items-center space-x-1 border border-pastel-mint/30 shadow-lg whitespace-nowrap">
                       <Sparkles className="w-3 h-3" />
-                      <span>{language === 'hi' ? 'लेबल को बॉक्स के अंदर रखें' : 'Align label declarations inside box'}</span>
+                      <span>{language === 'hi' ? 'नियम 2(h) PDP: घोषणाओं को बॉक्स के अंदर रखें' : 'Rule 2(h) PDP: Center label in viewfinder'}</span>
                     </div>
                   </div>
                 </div>
